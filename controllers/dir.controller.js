@@ -42,9 +42,11 @@ export const removeFolder = async (req, res) => {
     try {
         const folderToDelete = folderDB.find((folder) => folder.id === dirId);
         const folderIdsToDelete = [folderToDelete.id, ...folderToDelete.subfolder];
+        const parentFolderIndex = folderDB.findIndex((folder) => folder.id === folderToDelete.parent)
+        folderDB[parentFolderIndex].subfolder = folderDB[parentFolderIndex].subfolder.filter((sub) => sub === folderToDelete.id)
         for (let folderId of folderIdsToDelete) {
-            const index = folderDB.findIndex((folder) => folder.id === folderId);
-            const [deletedFolders] = folderDB.splice(index, 1);
+            const folderIndex = folderDB.findIndex((folder) => folder.id === folderId);
+            const [deletedFolders] = folderDB.splice(folderIndex, 1);
             for (const fileId of deletedFolders.files) {
                 const fileIndex = fileDB.findIndex((file) => file.id == fileId);
                 const [deletedFile] = fileDB.splice(fileIndex, 1)
