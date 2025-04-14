@@ -1,4 +1,4 @@
-import fs from 'node:fs/promises'
+import fs, { rm } from 'node:fs/promises'
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
@@ -30,7 +30,7 @@ export const renameFile = (req, res) => {
         const fileData = fileDB.find((file) => fileId === file.id);
         fileData['name'] = newName
         fs.writeFile('./db/fileDB.json', JSON.stringify(fileDB, { space: 4 }))
-        return res.status(404).json({ message: 'File renamed successfully', success: true, data: null })
+        return res.status(200).json({ message: 'File renamed successfully', success: true, data: null })
     } catch (error) {
         return res.status(404).json({ message: 'File not found for rename', success: false, data: null })
     }
@@ -60,5 +60,30 @@ export const addNewFile = (req, res) => {
         })
     } catch (error) {
         return res.status(404).json({ message: 'Unable to upload file', success: false, data: null })
+    }
+}
+
+export const removeFile = async (req, res) => {
+    const { fileId } = req.params;
+    if (!fileId) {
+        return res.status(400).json({ message: 'File is not provide to delete', success: false, data: null });
+    }
+    const fileIndex = fileDB.findIndex((file) => file.id === fileId);
+    if (fileIndex == -1) {
+        return res.status(404).json({ message: 'File not found to remove', success: false, data: null });
+    }
+    try {
+        const deletedFile = fileDB.splice(fileIndex, 1)[0];
+        const extension = path.extname(deletedFile.name);
+
+        const folder = folderDB.find((folder) => folder.id === deletedFile.folder);
+        folder.files = folder.files.filter((file) => file !== deletedFile.id);
+
+        await fs.writeFile('./db/dirDB.json', JSON.stringify(folderDB, { space: 4 }));
+        await fs.writeFile('./db/fileDB.json', JSON.stringify(fileDB, { space: 4 }));
+        await rm(`./storage/${deletedFile.id}${extension}`, { recursive: true });
+        res.status(200).json({ message: 'File remove successfully', success: true, data: null });
+    } catch (error) {
+        return res.status(500).json({ message: 'Unable to remove file', success: false, data: null });
     }
 }
