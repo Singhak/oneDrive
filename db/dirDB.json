@@ -3,6 +3,7 @@
         "id": "root",
         "name": "",
         "parent": null,
-        "files":[]
+        "files": [],
+        "subfolder": []
     }
 ]
