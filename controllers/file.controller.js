@@ -73,7 +73,7 @@ export const removeFile = async (req, res) => {
         return res.status(404).json({ message: 'File not found to remove', success: false, data: null });
     }
     try {
-        const deletedFile = fileDB.splice(fileIndex, 1)[0];
+        const [deletedFile] = fileDB.splice(fileIndex, 1);
         const extension = path.extname(deletedFile.name);
 
         const folder = folderDB.find((folder) => folder.id === deletedFile.folder);
