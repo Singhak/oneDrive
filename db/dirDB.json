@@ -2,6 +2,7 @@
     {
         "id": "root",
         "name": "",
-        "parent": null
+        "parent": null,
+        "files":[]
     }
 ]
