@@ -1,8 +1,9 @@
 import fs from 'node:fs/promises'
-import fileDB from '../db/fileDB.json' with { type: 'json' };
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
+import fileDB from '../db/fileDB.json' with { type: 'json' };
+import folderDB from '../db/dirDB.json' with { type: 'json' };
 
 export const getFile = (req, res) => {
     const { fileId } = req.params;
@@ -37,17 +38,27 @@ export const renameFile = (req, res) => {
 
 export const addNewFile = (req, res) => {
     try {
+        const parentDirId = req.params.dirId || 'root';
         const id = randomUUID();
-        const extension = path.extname('bann.jpg');
+        const filename = req.headers.filename || 'untitled';
+        const extension = path.extname(filename);
         const fullFileName = `${id}${extension}`;
         const writeStream = createWriteStream(`./storage/${fullFileName}`);
         req.pipe(writeStream);
-        req.on('end', () => {
-            res.send()
+        req.on('end', async () => {
+            const fileMeta = {
+                id,
+                folder: parentDirId,
+                name: filename
+            }
+            const folder = folderDB.find((folder) => folder.id === parentDirId);
+            folder.files.push(id);
+            fileDB.push(fileMeta)
+            await fs.writeFile('./db/dirDB.json', JSON.stringify(folderDB, { space: 4 }))
+            await fs.writeFile('./db/fileDB.json', JSON.stringify(fileDB, { space: 4 }))
+            res.status(200).json({ message: 'File uploaded successfully', success: true, data: null })
         })
-        // console.log('file.controller.js', req.body, req.params)
-        // fs.writeFile('./storage')
     } catch (error) {
-
+        return res.status(404).json({ message: 'Unable to upload file', success: false, data: null })
     }
 }
